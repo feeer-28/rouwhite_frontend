@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import { FaToggleOn, FaToggleOff } from "react-icons/fa";
 
@@ -9,8 +9,8 @@ const CrearRuta = ({ show, onClose, onCrear }) => {
   const [empresaId, setEmpresaId] = useState("");
   const [paraderosDisponibles, setParaderosDisponibles] = useState([]);
   const [empresasDisponibles, setEmpresasDisponibles] = useState([]);
-  const [paraderosSeleccionados, setParaderosSeleccionados] = useState([]);
-  const [modoRuta, setModoRuta] = useState("ida");
+  const [paraderosSeleccionados, setParaderosSeleccionados] = useState([]); // { idParadero, orden, tipo }
+  const [modoRuta, setModoRuta] = useState("ida"); // "ida" | "retorno"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -63,33 +63,57 @@ const CrearRuta = ({ show, onClose, onCrear }) => {
     }
   }, [show]);
 
-  const toggleModoRuta = () => {
-    // swap robusto usando variables temporales
-    setModoRuta((prev) => (prev === "ida" ? "retorno" : "ida"));
-    const oldOrigen = origenId;
-    setOrigenId(destinoId);
-    setDestinoId(oldOrigen);
-  };
+  const toggleModoRuta = useCallback(() => {
+    // intercambiar origen/destino de forma segura
+    setModoRuta((prevModo) => (prevModo === "ida" ? "retorno" : "ida"));
+    setOrigenId((prevOrigen) => {
+      // swap with current destino
+      setDestinoId((prevDestino) => prevOrigen ?? prevDestino);
+      return destinoId ?? prevOrigen;
+    });
+    // Nota: la lógica anterior intenta mantener origen/destino coherentes.
+    // Para comportamiento determinista y sin race, hacemos un swap explícito:
+    setOrigenId((prev) => {
+      const oldOrigen = origenId;
+      setDestinoId(oldOrigen);
+      return destinoId;
+    });
+  }, [origenId, destinoId]);
 
   const handleSelectParadero = (paradero) => {
-    const existe = paraderosSeleccionados.find(
-      (p) => p.idParadero === paradero.idParadero && p.tipo === modoRuta
-    );
-    if (existe) {
-      setParaderosSeleccionados((prev) =>
-        prev.filter((p) => !(p.idParadero === paradero.idParadero && p.tipo === modoRuta))
-      );
-    } else {
-      const ordenActual = paraderosSeleccionados.filter((p) => p.tipo === modoRuta).length + 1;
-      setParaderosSeleccionados((prev) => [
-        ...prev,
-        { idParadero: paradero.idParadero, orden: ordenActual, tipo: modoRuta },
-      ]);
-    }
+    setParaderosSeleccionados((prev) => {
+      // trabajo sobre copia para evitar mutaciones
+      const prevSameTipo = prev.filter((p) => p.tipo === modoRuta);
+      const existeIndex = prev.findIndex((p) => p.idParadero === paradero.idParadero && p.tipo === modoRuta);
+
+      if (existeIndex !== -1) {
+        // eliminar el paradero para este modo y reordenar los restantes de ese modo
+        const removed = prev.filter((p, i) => !(p.idParadero === paradero.idParadero && p.tipo === modoRuta));
+        const reordenados = removed
+          .map((p) => ({ ...p }))
+          .map((p) => {
+            if (p.tipo !== modoRuta) return p;
+            return p; // mantendremos orden relativo; se puede recalcular si se desea
+          });
+        // recalcular ordenes para el tipo afectado
+        let counter = 1;
+        const recalculado = reordenados.map((p) => {
+          if (p.tipo !== modoRuta) return p;
+          const updated = { ...p, orden: counter };
+          counter += 1;
+          return updated;
+        });
+        return recalculado;
+      } else {
+        // agregar nuevo con orden al final para ese modo
+        const ordenActual = prevSameTipo.length + 1;
+        return [...prev, { idParadero: paradero.idParadero, orden: ordenActual, tipo: modoRuta }];
+      }
+    });
   };
 
-  const getOrden = (idParadero) => {
-    const item = paraderosSeleccionados.find((p) => p.idParadero === idParadero && p.tipo === modoRuta);
+  const getOrden = (idParadero, tipo = modoRuta) => {
+    const item = paraderosSeleccionados.find((p) => p.idParadero === idParadero && p.tipo === tipo);
     return item ? item.orden : null;
   };
 
@@ -97,22 +121,29 @@ const CrearRuta = ({ show, onClose, onCrear }) => {
     e.preventDefault();
     setError("");
 
-    if (!nombreRuta.trim() || !origenId || !destinoId || !empresaId || paraderosSeleccionados.length === 0) {
-      setError("Todos los campos son obligatorios, incluyendo origen, destino, empresa y al menos un paradero.");
+    // validar básico
+    if (!nombreRuta.trim() || !origenId || !destinoId || !empresaId) {
+      setError("Todos los campos son obligatorios: nombre, origen, destino y empresa.");
       return;
     }
 
-    if (origenId === destinoId) {
+    const paraderosParaGuardar = paraderosSeleccionados.length > 0 ? paraderosSeleccionados : [];
+    if (paraderosParaGuardar.length === 0) {
+      setError("Debes seleccionar al menos un paradero para ida o retorno.");
+      return;
+    }
+
+    if (String(origenId) === String(destinoId)) {
       setError("Origen y destino no pueden ser el mismo paradero.");
       return;
     }
 
     const payload = {
       nombreRuta,
-      empresaId: parseInt(empresaId, 10),
-      origenId: parseInt(origenId, 10),
-      destinoId: parseInt(destinoId, 10),
-      paraderos: paraderosSeleccionados,
+      empresaId: Number(empresaId),
+      origenId: Number(origenId),
+      destinoId: Number(destinoId),
+      paraderos: paraderosParaGuardar,
     };
 
     try {
@@ -123,20 +154,17 @@ const CrearRuta = ({ show, onClose, onCrear }) => {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error("Error al crear la ruta");
+      if (!response.ok) {
+        const text = await response.text().catch(() => null);
+        throw new Error(text || "Error al crear la ruta");
+      }
 
       const nuevaRuta = await response.json();
       onCrear(nuevaRuta);
       onClose();
-      // limpieza final (por seguridad, ya hace el efecto de show=false)
-      setNombreRuta("");
-      setOrigenId("");
-      setDestinoId("");
-      setEmpresaId("");
-      setParaderosSeleccionados([]);
-      setModoRuta("ida");
+      // limpieza por seguridad (el efecto de show=false ya limpia)
     } catch (err) {
-      setError(err.message || "Error desconocido");
+      setError(err.message || "Error desconocido al crear la ruta");
     } finally {
       setLoading(false);
     }
@@ -163,11 +191,7 @@ const CrearRuta = ({ show, onClose, onCrear }) => {
           <Form.Group className="mb-3">
             <Form.Label>Origen</Form.Label>
             <div className="d-flex">
-              <Form.Select
-                value={origenId}
-                onChange={(e) => setOrigenId(e.target.value)}
-                required
-              >
+              <Form.Select value={origenId} onChange={(e) => setOrigenId(e.target.value)} required>
                 <option value="">Selecciona un paradero</option>
                 {paraderosDisponibles.map((p) => (
                   <option key={p.idParadero} value={String(p.idParadero)}>
@@ -175,11 +199,7 @@ const CrearRuta = ({ show, onClose, onCrear }) => {
                   </option>
                 ))}
               </Form.Select>
-              <Button
-                variant="outline-secondary"
-                className="ms-2"
-                onClick={() => setOrigenId("")}
-              >
+              <Button variant="outline-secondary" className="ms-2" onClick={() => setOrigenId("")}>
                 X
               </Button>
             </div>
@@ -188,11 +208,7 @@ const CrearRuta = ({ show, onClose, onCrear }) => {
           <Form.Group className="mb-3">
             <Form.Label>Destino</Form.Label>
             <div className="d-flex">
-              <Form.Select
-                value={destinoId}
-                onChange={(e) => setDestinoId(e.target.value)}
-                required
-              >
+              <Form.Select value={destinoId} onChange={(e) => setDestinoId(e.target.value)} required>
                 <option value="">Selecciona un paradero</option>
                 {paraderosDisponibles.map((p) => (
                   <option key={p.idParadero} value={String(p.idParadero)}>
@@ -200,11 +216,7 @@ const CrearRuta = ({ show, onClose, onCrear }) => {
                   </option>
                 ))}
               </Form.Select>
-              <Button
-                variant="outline-secondary"
-                className="ms-2"
-                onClick={() => setDestinoId("")}
-              >
+              <Button variant="outline-secondary" className="ms-2" onClick={() => setDestinoId("")}>
                 X
               </Button>
             </div>
@@ -212,11 +224,7 @@ const CrearRuta = ({ show, onClose, onCrear }) => {
 
           <Form.Group className="mb-3">
             <Form.Label>Empresa</Form.Label>
-            <Form.Select
-              value={empresaId}
-              onChange={(e) => setEmpresaId(e.target.value)}
-              required
-            >
+            <Form.Select value={empresaId} onChange={(e) => setEmpresaId(e.target.value)} required>
               <option value="">Selecciona una empresa de Popayán</option>
               {empresasDisponibles.map((emp) => (
                 <option key={emp.idEmpresa} value={String(emp.idEmpresa)}>
@@ -236,7 +244,7 @@ const CrearRuta = ({ show, onClose, onCrear }) => {
 
             <div className="d-flex flex-wrap gap-2 mt-3">
               {paraderosDisponibles.map((paradero) => {
-                const orden = getOrden(paradero.idParadero);
+                const orden = getOrden(paradero.idParadero, modoRuta);
                 const seleccionado = orden !== null;
                 return (
                   <div
@@ -255,13 +263,15 @@ const CrearRuta = ({ show, onClose, onCrear }) => {
                   >
                     <span>{paradero.nombre}</span>
                     {seleccionado && (
-                      <div style={{
-                        background: "#0d6efd",
-                        color: "#fff",
-                        borderRadius: 999,
-                        padding: "2px 8px",
-                        fontSize: 12,
-                      }}>
+                      <div
+                        style={{
+                          background: "#0d6efd",
+                          color: "#fff",
+                          borderRadius: 999,
+                          padding: "2px 8px",
+                          fontSize: 12,
+                        }}
+                      >
                         {orden}
                       </div>
                     )}
