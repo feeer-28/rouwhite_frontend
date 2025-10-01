@@ -1,4 +1,3 @@
-/* Variables globales (se pueden dejar así) */
 :root {
   --primary: #5027BC;
   --primary-light: rgba(80, 39, 188, 0.1);
@@ -17,7 +16,13 @@
 .dashboardContainer {
   min-height: 100vh;
   background-color: #f5f7fb;
-  padding: 2rem 1rem 60px 1rem; /* Más padding arriba y abajo */
+  padding: 2rem 1rem 60px 1rem;
+}
+
+/* Ajuste cuando el sidebar está activo */
+.dashboardContainer.withSidebar {
+  margin-left: 250px;
+  width: calc(100% - 250px);
 }
 
 /* Tarjetas */
@@ -25,9 +30,9 @@
   border: none;
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
-  margin-bottom: 2rem; /* Aumenta el espacio entre tarjetas */
+  margin-bottom: 2rem;
   background: white;
-  padding: 1rem; /* Padding interno para que el contenido respire */
+  padding: 1rem;
 }
 
 /* Lista de elecciones */
@@ -93,7 +98,12 @@
   }
 
   .cardCustom {
-    margin-bottom: 1.5rem; /* Reduce un poco el margen en móviles */
-    padding: 0.75rem; /* Padding más ajustado en móvil */
+    margin-bottom: 1.5rem;
+    padding: 0.75rem;
+  }
+
+  .dashboardContainer.withSidebar {
+    margin-left: 0;
+    width: 100%;
   }
 }
