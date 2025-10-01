@@ -5,6 +5,7 @@ import DataTable from "react-data-table-component";
 import layoutStyles from "../../pages/despachador/sidebar/sidebar.module.css";
 import SiderDespachador from "../../pages/despachador/sidebar/SiderDespachador";
 import CrearRuta from "../../pages/despachador/components/CrearRuta";
+import ActualizarRuta from "../../pages/despachador/components/ActualizarRuta"; // <-- import agregado
 
 // Modal de previsualización (lazy + seguro)
 const PrevisualizarRutaLazy = React.lazy(() =>
@@ -19,6 +20,10 @@ const GestionRutas = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
   const [previewRuta, setPreviewRuta] = useState(null);
+
+  // Estados para actualizar ruta
+  const [showActualizar, setShowActualizar] = useState(false);
+  const [rutaSeleccionada, setRutaSeleccionada] = useState(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -92,12 +97,21 @@ const GestionRutas = () => {
     setShowPreview(true);
   };
 
+  // Abre modal de edición con la ruta seleccionada
   const handleEdit = (row) => {
-    console.log("Editar:", row);
+    setRutaSeleccionada(row);
+    setShowActualizar(true);
   };
 
   const handleToggleEstado = (row) => {
     setRutas((prev) => prev.map((r) => (r.id === row.id ? { ...r, estado: r.estado === "activo" ? "inactivo" : "activo" } : r)));
+  };
+
+  // Reemplaza la ruta actualizada en la lista local (inmutabilidad)
+  const handleActualizarEnLista = (rutaActualizada) => {
+    setRutas((prev) => prev.map((r) => (r.id === rutaActualizada.id ? rutaActualizada : r)));
+    setShowActualizar(false);
+    setRutaSeleccionada(null);
   };
 
   const columns = [
@@ -177,6 +191,17 @@ const GestionRutas = () => {
           mapComponent={null}
         />
       </Suspense>
+
+      {/* Modal actualizar ruta */}
+      <ActualizarRuta
+        show={showActualizar}
+        onClose={() => {
+          setShowActualizar(false);
+          setRutaSeleccionada(null);
+        }}
+        ruta={rutaSeleccionada}
+        onActualizar={handleActualizarEnLista}
+      />
     </>
   );
 };
