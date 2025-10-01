@@ -1,0 +1,99 @@
+/* Variables globales (se pueden dejar así) */
+:root {
+  --primary: #5027BC;
+  --primary-light: rgba(80, 39, 188, 0.1);
+  --primary-dark: #3e1f94;
+  --success: #28a745;
+  --light: #f8f9fa;
+  --gray-100: #f8f9fa;
+  --gray-200: #e9ecef;
+  --dark: #343a40;
+  --border-radius: 0.5rem;
+  --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+  --transition: all 0.3s ease;
+}
+
+/* Estilos base del dashboard */
+.dashboardContainer {
+  min-height: 100vh;
+  background-color: #f5f7fb;
+  padding: 2rem 1rem 60px 1rem; /* Más padding arriba y abajo */
+}
+
+/* Tarjetas */
+.cardCustom {
+  border: none;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin-bottom: 2rem; /* Aumenta el espacio entre tarjetas */
+  background: white;
+  padding: 1rem; /* Padding interno para que el contenido respire */
+}
+
+/* Lista de elecciones */
+.electionList .listGroupItem {
+  padding: 1rem 0;
+  border: none;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.electionList .listGroupItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Botones */
+.btnCustom {
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+.btnPrimary {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.btnPrimary:hover {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.btnOutlinePrimary {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.btnOutlinePrimary:hover {
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+  border-color: var(--primary);
+}
+
+/* Progress bar */
+.progressCustom {
+  height: 6px;
+  border-radius: 3px;
+  background-color: var(--gray-200);
+}
+
+.progressBar {
+  background-color: var(--success);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboardContainer {
+    padding: 1rem 0;
+  }
+
+  .electionList .listGroupItem {
+    padding: 0.75rem 0;
+  }
+
+  .cardCustom {
+    margin-bottom: 1.5rem; /* Reduce un poco el margen en móviles */
+    padding: 0.75rem; /* Padding más ajustado en móvil */
+  }
+}
