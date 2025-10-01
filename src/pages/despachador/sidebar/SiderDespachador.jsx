@@ -2,11 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaHome, FaSignOutAlt,
-  FaClipboardList, FaUserPlus, FaMapMarkerAlt, FaBus
+  FaClipboardList, FaMapMarkerAlt, FaBus
 } from 'react-icons/fa';
 import { Button, Dropdown } from 'react-bootstrap';
 import { BsList } from 'react-icons/bs';
-import styles from '../../despachador/sidebar/sidebar.module.css'; // ✅ Correcto
+import styles from '../../despachador/sidebar/sidebar.module.css';
 
 const SiderDespachador = ({ onNavigate }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 992);
@@ -59,9 +59,9 @@ const SiderDespachador = ({ onNavigate }) => {
     {
       type: 'dropdown',
       text: 'Gestión de Conductores',
-      icon: <FaUserPlus />,
+      icon: <FaClipboardList />,
       items: [
-        { to: '/despachador/conductores', icon: <FaUserPlus />, text: 'Conductores' }
+        { to: '/despachador/conductores', icon: <FaClipboardList />, text: 'Gestionar Conductores' }
       ]
     },
     {

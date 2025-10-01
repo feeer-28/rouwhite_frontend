@@ -4,12 +4,12 @@ import { FaEdit, FaPlus, FaSearch, FaEye, FaToggleOn, FaToggleOff } from "react-
 import DataTable from "react-data-table-component";
 import layoutStyles from "../../pages/despachador/sidebar/sidebar.module.css";
 import SiderDespachador from "../../pages/despachador/sidebar/SiderDespachador";
-import CrearRuta from "../../pages/despachador/components/CrearRuta";
-import ActualizarRuta from "../../pages/despachador/components/ActualizarRuta"; // <-- import agregado
+import CrearRuta from "../../pages/despachador/components/rutas/CrearRuta"; // <-- import agregado
+import ActualizarRuta from "../../pages/despachador/components/rutas/ActualizarRuta"; // <-- import agregado
 
 // Modal de previsualización (lazy + seguro)
 const PrevisualizarRutaLazy = React.lazy(() =>
-  import("../../pages/despachador/components/PrevisualizarRuta").catch(() => ({ default: () => null }))
+  import("../../pages/despachador/components/rutas/PrevisualizarRuta").catch(() => ({ default: () => null }))
 );
 
 const GestionRutas = () => {
