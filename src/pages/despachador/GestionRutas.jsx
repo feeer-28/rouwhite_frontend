@@ -4,6 +4,7 @@ import { FaEdit, FaPlus, FaSearch, FaEye, FaToggleOn, FaToggleOff } from "react-
 import DataTable from "react-data-table-component";
 import layoutStyles from "../../pages/despachador/sidebar/sidebar.module.css";
 import SiderDespachador from "../../pages/despachador/sidebar/SiderDespachador";
+import CrearRuta from "../../pages/despachador/components/CrearRuta";
 
 const GestionRutas = () => {
   const [rutas, setRutas] = useState([]);
@@ -13,7 +14,8 @@ const GestionRutas = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
-    setTimeout(() => {
+    // Simulación de carga inicial (fallback quemado)
+    const t = setTimeout(() => {
       setRutas([
         { id: 1, nombre: "Ruta Norte", destino: "Terminal de Popayán", estado: "activo" },
         { id: 2, nombre: "Ruta Sur", destino: "Universidad del Cauca", estado: "pendiente" },
@@ -21,29 +23,27 @@ const GestionRutas = () => {
       ]);
       setLoading(false);
     }, 800);
+
+    return () => clearTimeout(t);
   }, []);
 
-  const handleCrearRuta = async (nuevaRuta) => {
-    try {
-      // const response = await fetch("/api/rutas", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(nuevaRuta),
-      // });
-      // const data = await response.json();
-      // setRutas([...rutas, data]);
-
-      setRutas([...rutas, nuevaRuta]);
-    } catch (error) {
-      console.error("Error al crear ruta:", error);
-    }
+  const handleCrearRuta = (nuevaRuta) => {
+    // Si la API devuelve id numérico, use ese; si es simulada, normalizamos
+    const nueva = {
+      id: nuevaRuta.id ?? Date.now(),
+      nombre: nuevaRuta.nombreRuta ?? nuevaRuta.nombre ?? `Ruta ${rutas.length + 1}`,
+      destino: nuevaRuta.destino ?? (nuevaRuta.paraderos?.length ? "Varios paraderos" : "Sin destino"),
+      estado: nuevaRuta.estado ?? "activo",
+    };
+    setRutas((prev) => [...prev, nueva]);
+    setMostrarCrear(false);
   };
 
   const rutasFiltradas = rutas.filter((r) => {
     const term = busqueda.toLowerCase();
     return (
       r.nombre.toLowerCase().includes(term) ||
-      r.destino.toLowerCase().includes(term)
+      (r.destino || "").toLowerCase().includes(term)
     );
   });
 
@@ -70,15 +70,16 @@ const GestionRutas = () => {
       name: "Acciones",
       cell: (row) => (
         <div className="d-flex gap-2">
-          <Button size="sm" variant="outline-info">
+          <Button size="sm" variant="outline-info" title="Ver">
             <FaEye />
           </Button>
-          <Button size="sm" variant="outline-primary">
+          <Button size="sm" variant="outline-primary" title="Editar">
             <FaEdit />
           </Button>
           <Button
             size="sm"
             variant={row.estado === "activo" ? "outline-danger" : "outline-success"}
+            title={row.estado === "activo" ? "Desactivar" : "Activar"}
           >
             {row.estado === "activo" ? <FaToggleOff /> : <FaToggleOn />}
           </Button>
@@ -94,9 +95,7 @@ const GestionRutas = () => {
         <div className="container py-4">
           <div className="mb-4">
             <h2 className="fw-bold">Gestión de Rutas</h2>
-            <p className="text-muted">
-              Administra las rutas urbanas activas, pendientes y sus destinos.
-            </p>
+            <p className="text-muted">Administra las rutas urbanas activas, pendientes y sus destinos.</p>
           </div>
 
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
@@ -113,6 +112,7 @@ const GestionRutas = () => {
                 />
               </InputGroup>
             </div>
+
             <Button variant="primary" onClick={() => setMostrarCrear(true)}>
               <FaPlus className="me-2" /> Nueva Ruta
             </Button>
@@ -130,6 +130,12 @@ const GestionRutas = () => {
           </div>
         </div>
       </div>
+
+      <CrearRuta
+        show={mostrarCrear}
+        onClose={() => setMostrarCrear(false)}
+        onCrear={handleCrearRuta}
+      />
     </>
   );
 };
