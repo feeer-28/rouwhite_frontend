@@ -3,7 +3,10 @@ import axios from 'axios'
 // Base URL del backend: usar la variable de entorno local (Vite)
 // Asegúrate de definir VITE_API_BASE_URL en tu archivo .env, ej:
 // VITE_API_BASE_URL="http://localhost:3333"
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333'
+const BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL
+  || (import.meta.env.PROD ? 'https://rouwhite-backend-1.onrender.com' : 'http://localhost:3333')
+)
 
 export const api = axios.create({
   baseURL: BASE_URL,
