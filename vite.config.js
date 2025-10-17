@@ -4,4 +4,13 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      '/empresas': { target: 'http://localhost:3333', changeOrigin: true },
+      '/rutas': { target: 'http://localhost:3333', changeOrigin: true },
+      '/ruta-paraderos': { target: 'http://localhost:3333', changeOrigin: true },
+      '/public': { target: 'http://localhost:3333', changeOrigin: true },
+      '/api': { target: 'http://localhost:3333', changeOrigin: true },
+    },
+  },
 })
